@@ -1,7 +1,6 @@
 library(shiny)
 library(shinyFeedback)
-
-
+library(magick)
 
 ui <- navbarPage("CutSortR",
                  header = useShinyFeedback(),
@@ -11,19 +10,19 @@ ui <- navbarPage("CutSortR",
 
                             sidebarLayout(
                               sidebarPanel(
-                                fileInput("fn",
+                                fileInput("img_fn",
                                           label = "Input image file(s):",
                                           multiple = TRUE,
                                           placeholder = "Select file(s)",
                                           accept = "image/*"),
 
-                                numericInput("width",
+                                numericInput("slice_width",
                                             label = "Sliced image width (px):",
                                             value = 100,
                                             min = 1),
                                 textOutput("invalid_width"),
 
-                                numericInput("height",
+                                numericInput("slice_height",
                                              label = "Sliced image height (px):",
                                              value = 100,
                                              min = 1),
@@ -35,40 +34,52 @@ ui <- navbarPage("CutSortR",
                                              min = 1),
                                 textOutput("invalid_step"),
                                 uiOutput("fmt"),
+                                downloadButton()
                                 ),
                               mainPanel(
-                                textOutput("img_width")
+                                plotOutput("img")
                               )
                             )
                           )),
-                 tabPanel("Component 2")
+                 tabPanel("Image Sorter")
 )
 
 server <- function(input, output){
-  img_width <- 100
-  img_height <- 100
-  img_minlen <- min(c(img_width, img_height))
-  img_fmt <- "png"
+  img_info <- reactiveValues(width = 100,
+                             height = 100,
+                             minlen = 100,
+                             fmt = "jpg")
+
+  observeEvent(input$img_fn, {
+    info <- image_info(image_read(input$img_fn$datapath[1]))
+    img_info$width <- info$width
+    img_info$height <- info$height
+    img_info$minlen <- min(info$width, info$height)
+    img_info$fmt <- switch(info$format,
+                           JPEG = "jpg", "JPG" = "jpg", "jpeg" = "jpg", jpg = "jpg",
+                           PNG = "png", png = "png", TIFF = "tif", TIF = "tif",
+                           tiff = "tiff", tif = "tif")
+  })
 
   output$fmt <- renderUI({
     selectInput("fmt",
                 "Output image format:",
                 c("jpg", "png", "tif"),
-                selected = img_fmt)
+                selected = img_info$fmt)
   })
 
   invalid_width <- reactive({
-    feedbackWarning("width", input$width > img_width, "Invalid width!")
+    feedbackWarning("slice_width", input$slice_width > img_info$width, "Invalid width!")
   })
   output$invalid_width <- renderText(invalid_width())
 
   invalid_height <- reactive({
-    feedbackWarning("height", input$height > img_height, "Invalid height!")
+    feedbackWarning("slice_height", input$slice_height > img_info$height, "Invalid height!")
   })
   output$invalid_height <- renderText(invalid_height())
 
   invalid_step <- reactive({
-    feedbackWarning("step", input$step > img_minlen, "Invalid step!")
+    feedbackWarning("step", input$step > img_info$minlen, "Invalid step!")
   })
   output$invalid_step <- renderText(invalid_step())
 
