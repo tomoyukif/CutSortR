@@ -20,7 +20,7 @@ mcprShiny <- function(){
 #' @param out_dir A path to the output directory
 #' @param out The prefix of output files
 #'
-#' @import magick
+#' @importFrom magick image_read image_info geometry_area image_crop image_write
 #'
 #' @export
 #'
@@ -80,9 +80,9 @@ sliceImages <- function(img_fn, width = 100, height = 100, step = 80,
 #' @param coord_fn A path to a coordinate file
 #' @param out_dir A path to an output directory
 #'
-#' @import magick
-#' @import jsonlite
-#'
+#' @importFrom magick image_read image_info geometry_area image_crop image_write
+#' @importFrom jsonlite read_json
+#' 
 #' @export
 #'
 sortImages <- function(ann_fn, coord_fn = NULL, out_dir = ""){
