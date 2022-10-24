@@ -1,6 +1,29 @@
+#' Launch the shiny application for MCPtaggR
 #'
+#' @import shiny
+#' @import shinyFiles
+#' @import shinyFeedback
 #'
+#' @export
 
+mcprShiny <- function(){
+  runApp(system.file("app.R", package = "CutSortR"))
+}
+
+#' Slice an image
+#'
+#' @param img_fn A path to an image file
+#' @param width An integer to specify the width of output sliced images
+#' @param height An integer to specify the height of output sliced images
+#' @param step An integer to specify the sliding window step size
+#' @param fmt A string to specify the output file format
+#' @param out_dir A path to the output directory
+#' @param out The prefix of output files
+#'
+#' @import magick
+#'
+#' @export
+#'
 sliceImages <- function(img_fn, width = 100, height = 100, step = 80,
                         fmt = "auto", out_dir = "", out = "slice"){
   if(length(img_fn) == 1){
@@ -14,10 +37,10 @@ sliceImages <- function(img_fn, width = 100, height = 100, step = 80,
       fmt <- match.arg(fmt, c("jpg", "png", "tiff", "gif"))
     }
     if(out_dir == ""){out_dir <- "./"}
-    dir.create(out_dir, showWarnings = FALSE)
-    coord_fn <-             paste(out_dir, paste0(out, "_sliceCoordinate.csv"), sep = "/")
-    write.csv(t("fileName", "x", "y", "width", "height"), coord_fn,
-              row.names = FALSE, col.names = FALSE)
+    dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+    coord_fn <- paste(out_dir, paste0(out, ".coordinate.csv"), sep = "/")
+    write.table(t(c("fileName", "x", "y", "width", "height")), coord_fn,
+                row.names = FALSE, col.names = FALSE, sep = ",")
     x <- 0
     y <- 0
     while(TRUE){
@@ -25,8 +48,8 @@ sliceImages <- function(img_fn, width = 100, height = 100, step = 80,
       image_write(image_crop(img, geometry_area(width, height, x, y)),
                   paste(out_dir, out_fn, sep = "/"),
                   fmt, 100, 16)
-      write.csv(t(out_fn, x, y, width, height), coord_fn,
-                row.names = FALSE, col.names = FALSE, append = TRUE)
+      write.table(t(c(out_fn, x, y, width, height)), coord_fn,
+                  row.names = FALSE, col.names = FALSE, append = TRUE, sep = ",")
       if(x + width < info$width){
         x <- x + step
 
@@ -51,9 +74,17 @@ sliceImages <- function(img_fn, width = 100, height = 100, step = 80,
 }
 
 
+#' Sort annotated images
 #'
+#' @param ann_fn A path to an annotation file
+#' @param coord_fn A path to a coordinate file
+#' @param out_dir A path to an output directory
 #'
-ann_fn <- "../sampleImage/RED_line_pilot_3C/annotations.json"
+#' @import magick
+#' @import jsonlite
+#'
+#' @export
+#'
 sortImages <- function(ann_fn, coord_fn = NULL, out_dir = ""){
   ann <- read_json(ann_fn)
   ann_dir <- paste(head(unlist(strsplit(ann_fn, "/")), -1), collapse = "/")
@@ -78,12 +109,12 @@ sortImages <- function(ann_fn, coord_fn = NULL, out_dir = ""){
                                                 df$x[j],
                                                 df$y[j])),
                   paste(paste(paste(out_dir, sub("\\..*", "", img_fn), sep = "/"),
-                        df$x[j],
-                        df$y[j],
-                        df$width[j],
-                        df$height[j],
-                        df$label[j],
-                        sep = "_"), fmt, sep = "."),
+                              df$x[j],
+                              df$y[j],
+                              df$width[j],
+                              df$height[j],
+                              df$label[j],
+                              sep = "_"), fmt, sep = "."),
                   fmt, 100)
     }
     out_df <- rbind(out_df, df)
