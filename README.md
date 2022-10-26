@@ -19,7 +19,6 @@ if( !require(shinyFiles, quietly = TRUE) ){
   install.packages("jsonlite")
 }
 ```
-
 You can install `CutSortR` from the GitHub repository.
 ```
 if (!requireNamespace("devtools", quietly = TRUE))
@@ -31,4 +30,16 @@ To execute a shinyApp of CutSortR, run the following.
 ```
 library(CutSortR)
 cutsortr()
+```
+
+When you meet a dependency error in package installation, 
+please try installing the package shown in the ERROR message.
+
+The message would be like the following.
+```
+ERROR: dependencies ‘shiny’ is not available for package ‘CutSortR’
+```
+Then try
+```
+install.packages("shiny")
 ```
