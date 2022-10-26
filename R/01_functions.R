@@ -6,7 +6,7 @@
 #'
 #' @export
 
-mcprShiny <- function(){
+cutsortr <- function(){
   runApp(system.file("app.R", package = "CutSortR"))
 }
 
