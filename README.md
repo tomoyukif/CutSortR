@@ -16,3 +16,8 @@ if (!requireNamespace("devtools", quietly = TRUE))
     
 devtools::install_github("tomoyukif/CutSortR")
 ```
+
+To execute a shinyApp of CutSortR, run the following.
+```
+cutsortr()
+```
