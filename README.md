@@ -19,5 +19,6 @@ devtools::install_github("tomoyukif/CutSortR", dependencies = TRUE)
 
 To execute a shinyApp of CutSortR, run the following.
 ```
+library(CutSortR)
 cutsortr()
 ```
