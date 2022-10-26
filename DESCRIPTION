@@ -5,6 +5,7 @@ Authors@R:
     person("Tomoyuki", "Furuta", , "f.tomoyuki@okayama-u.ac.jp", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
 Description: What the package does (one paragraph).
+Import: shiny, shinyFiles, shinyFeedback, magick, jsonlite
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
