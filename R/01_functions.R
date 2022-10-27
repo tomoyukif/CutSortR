@@ -16,6 +16,7 @@ cutsortr <- function(){
 #' @param width An integer to specify the width of output sliced images
 #' @param height An integer to specify the height of output sliced images
 #' @param step An integer to specify the sliding window step size
+#' @param divide An integer to specify how many tiles the image is cut into.
 #' @param fmt A string to specify the output file format
 #' @param out_dir A path to the output directory
 #' @param out The prefix of output files
@@ -24,7 +25,7 @@ cutsortr <- function(){
 #'
 #' @export
 #'
-sliceImages <- function(img_fn, width = 100, height = 100, step = 80,
+sliceImages <- function(img_fn, width = 100, height = 100, step = 80, divide = 0,
                         fmt = "auto", out_dir = "", out = "slice"){
   if(length(img_fn) == 1){
     img <- image_read(img_fn)
@@ -41,6 +42,19 @@ sliceImages <- function(img_fn, width = 100, height = 100, step = 80,
     coord_fn <- paste(out_dir, paste0(out, ".coordinate.csv"), sep = "/")
     write.table(t(c("fileName", "x", "y", "width", "height")), coord_fn,
                 row.names = FALSE, col.names = FALSE, sep = ",")
+    
+    x_step <- step
+    y_step <- step
+    if(divide != 0){
+        x_step <- img_info$width / divide
+        y_step <- img_info$height / divide
+        if(x_step != round(x_step)){
+            x_step <- round(x_step + 1)
+        } else {
+            y_step <- round(y_step + 1)
+        }
+    }
+    
     x <- 0
     y <- 0
     while(TRUE){
@@ -51,12 +65,12 @@ sliceImages <- function(img_fn, width = 100, height = 100, step = 80,
       write.table(t(c(out_fn, x, y, width, height)), coord_fn,
                   row.names = FALSE, col.names = FALSE, append = TRUE, sep = ",")
       if(x + width < info$width){
-        x <- x + step
+        x <- x + x_step
 
       } else {
         x <- 0
         if(y + height < info$height){
-          y <- y + step
+          y <- y + y_step
         } else {
           break
         }
@@ -65,7 +79,7 @@ sliceImages <- function(img_fn, width = 100, height = 100, step = 80,
 
   } else if(length(img_fn) > 1){
     for(fn in img_fn){
-      sliceImages(img_fn = fn, width = width, height = height, step = step,
+      sliceImages(img_fn = fn, width = width, height = height, step = step, divide = divide,
                   fmt = fmt,
                   out_dir = paste(out_dir, gsub(".*\\/|\\..*", "", fn), sep = "/"),
                   out = out)
