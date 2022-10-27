@@ -46,8 +46,8 @@ sliceImages <- function(img_fn, width = 100, height = 100, step = 80, divide = 0
     x_step <- step
     y_step <- step
     if(divide != 0){
-        x_step <- img_info$width / divide
-        y_step <- img_info$height / divide
+        x_step <- info$width / divide
+        y_step <- info$height / divide
         if(x_step != round(x_step)){
             x_step <- round(x_step + 1)
         } else {
