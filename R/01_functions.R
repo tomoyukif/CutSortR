@@ -53,6 +53,8 @@ sliceImages <- function(img_fn, width = 100, height = 100, step = 80, divide = 0
         } else {
             y_step <- round(y_step + 1)
         }
+        width <- x_step
+        height <- y_step
     }
     
     x <- 0
