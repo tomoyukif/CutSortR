@@ -1,6 +1,7 @@
 library(shinyFeedback)
 library(shinyFiles)
 library(magick)
+library(exifr)
 library(CutSortR)
 
 ui <- navbarPage("CutSortR",
@@ -93,40 +94,51 @@ server <- function(input, output){
                                fmt = "jpg")
     
     observeEvent(input$img_fn1, {
-        fn1 <- parseFilePaths(volumes, input$img_fn1)
-        info <- try(image_info(image_read(fn1$datapath[1])))
-        
-        if(!inherits(info, "try-error")){
+        if(!inherits(input$img_fn1, "shinyActionButtonValue")){
+            fn1 <- parseFilePaths(volumes, input$img_fn1)
+            ex <- read_exif(fn1$datapath[1])
+            img_size <- as.numeric(unlist(strsplit(ex$ImageSize, " ")))
+            
             img_info$fn <- fn1$name[1]
             img_info$path <- fn1$datapath[1]
-            img_info$width <- info$width
-            img_info$height <- info$height
-            img_info$minlen <- min(c(info$width, info$height))
-            img_info$fmt <- switch(info$format,
-                                   JPEG = "jpg", "JPG" = "jpg", "jpeg" = "jpg", jpg = "jpg",
-                                   PNG = "png", png = "png", TIFF = "tif", TIF = "tif",
+            img_info$width <- img_size[1]
+            img_info$height <- img_size[2]
+            img_info$minlen <- min(img_size)
+            output$img_fn <- renderText(paste0("The first input file: ",
+                                               img_info$fn))
+            output$img_width <- renderText(paste0("Image width: ",
+                                                  img_info$width, "px"))
+            output$img_height <- renderText(paste0("Image height: ", 
+                                                   img_info$height, "px"))
+            img_info$fmt <- switch(ex$FileType,
+                                   JPEG = "jpg", JPG = "jpg",
+                                   jpeg = "jpg", jpg = "jpg",
+                                   PNG = "png", png = "png", 
+                                   TIFF = "tif", TIF = "tif",
                                    tiff = "tiff", tif = "tif")
             
-            output$img_fn <- renderText(paste0("The first input file: ", img_info$fn))
-            output$img_width <- renderText(paste0("Image width: ", img_info$width, "px"))
-            output$img_height <- renderText(paste0("Image height: ", img_info$height, "px"))
-            render_size <- 600
-            if(all(c(img_info$width, img_info$height) < render_size)){
+            render_limit <- 2000
+            if(all(img_size <= render_limit)){
+                print("render")
+                render_size <- 600
                 out_width <- img_info$width
                 out_height <- img_info$height
-            } else {
-                if(img_info$width > img_info$height){
+                
+                if(out_width > out_height){
+                    out_height <- render_size * out_height / out_width
                     out_width <- render_size
-                    out_height <- render_size * img_info$height / img_info$width
                 } else {
-                    out_width <- render_size * img_info$width / img_info$height
+                    out_width <- render_size * out_width / out_height
                     out_height <- render_size
                 }
+                output$img <- renderImage(list(src = img_info$path,
+                                               width = out_width,
+                                               height = out_height),
+                                          deleteFile = FALSE)
+            } else {
+                output$img <- renderImage(list(src = ""),
+                                          deleteFile = FALSE)
             }
-            output$img <- renderImage(list(src = img_info$path,
-                                           width = out_width,
-                                           height = out_height),
-                                      deleteFile = FALSE)
         }
     })
     
