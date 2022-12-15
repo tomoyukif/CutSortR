@@ -44,18 +44,14 @@ ui <- navbarPage("CutSortR",
                                       actionButton("slice", "Do slice!")
                                   ),
                                   mainPanel(
-                                      tags$style("#dirchoose {font-size:20px; display:block; }"),
-                                      tags$style("#img_fn {font-size:20px; display:block; }"),
-                                      tags$style("#img_width {font-size:20px; display:block; }"),
-                                      tags$style("#img_height {font-size:20px; display:block; }"),
+                                      tags$style("#dirchoose {font-size:12px; display:block; }"),
                                       p("The sliced images will be named",
                                         "<input file name>_<sliced image width>x<sliced image height>_<sliding step>.<output image format>",
                                         "in a new directory named <input file name> in the same",
                                         "dicretory with the images to be sliced."),
-                                      textOutput("dirchoose"),
-                                      textOutput("img_fn"),
-                                      textOutput("img_width"),
-                                      textOutput("img_height"),
+                                      verbatimTextOutput("dirchoose"),
+                                      dataTableOutput("fn_tbl"),
+                                      textOutput("tif_img"),
                                       plotOutput("img")
                                   )
                               )
@@ -96,30 +92,35 @@ server <- function(input, output){
     observeEvent(input$img_fn1, {
         if(!inherits(input$img_fn1, "shinyActionButtonValue")){
             fn1 <- parseFilePaths(volumes, input$img_fn1)
-            ex <- read_exif(fn1$datapath[1])
-            img_size <- as.numeric(unlist(strsplit(ex$ImageSize, " ")))
+            ex <- subset(read_exif(fn1$datapath),
+                         select = c(FileName, SourceFile, FileType,
+                                    ImageWidth, ImageHeight, Directory))
+            output$dirchoose <- renderText(paste0("Output directory: \n",
+                                                  ex$Directory[1]))
+            tbl <- subset(ex, select = c(FileName, ImageWidth, ImageHeight))
+            output$fn_tbl <- renderDataTable(tbl,
+                                             options = list(pageLength = 10,
+                                                            scrollY = "200px",
+                                                            scrollCollapse = TRUE,
+                                                            searching = FALSE))
             
-            img_info$fn <- fn1$name[1]
-            img_info$path <- fn1$datapath[1]
-            img_info$width <- img_size[1]
-            img_info$height <- img_size[2]
-            img_info$minlen <- min(img_size)
-            output$img_fn <- renderText(paste0("The first input file: ",
-                                               img_info$fn))
-            output$img_width <- renderText(paste0("Image width: ",
-                                                  img_info$width, "px"))
-            output$img_height <- renderText(paste0("Image height: ", 
-                                                   img_info$height, "px"))
-            img_info$fmt <- switch(ex$FileType,
+            img_info$fn <- ex$FileName[1]
+            img_info$path <- ex$SourceFile[1]
+            img_info$width <- ex$ImageWidth[1]
+            img_info$height <- ex$ImageHeight[1]
+            img_info$minlen <- min(c(ex$ImageWidth[1], ex$ImageHeight[1]))
+            img_info$fmt <- switch(ex$FileType[1],
                                    JPEG = "jpg", JPG = "jpg",
                                    jpeg = "jpg", jpg = "jpg",
                                    PNG = "png", png = "png", 
                                    TIFF = "tif", TIF = "tif",
-                                   tiff = "tiff", tif = "tif")
+                                   tiff = "tif", tif = "tif")
             
             render_limit <- 2000
-            if(all(img_size <= render_limit)){
-                print("render")
+            if(img_info$fmt == "tif"){
+                output$tif_img <- renderText("Not support rendering TIFF images on this web app.")
+                
+            } else if(all(c(img_info$width, img_info$height) <= render_limit)){
                 render_size <- 600
                 out_width <- img_info$width
                 out_height <- img_info$height
