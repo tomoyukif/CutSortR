@@ -122,8 +122,8 @@ sortImages <- function(ann_fn, coord_fn = NULL, out_dir = ""){
     for(j in seq_len(nrow(df))){
       image_write(image_crop(img, geometry_area(df$width[j],
                                                 df$height[j],
-                                                df$x[j],
-                                                df$y[j])),
+                                                df$x[j] - df$width[j]/2,
+                                                df$y[j] - df$height[j]/2)),
                   paste(paste(paste(out_dir, sub("\\..*", "", img_fn), sep = "/"),
                               df$x[j],
                               df$y[j],
@@ -137,9 +137,5 @@ sortImages <- function(ann_fn, coord_fn = NULL, out_dir = ""){
   }
   write.csv(out_df, paste(out_dir, "sortedImages.csv", sep = "/"), row.names = FALSE)
   cls <- table(out_df$label)
-  message("No. of images: ", nrow(out_df))
-  message("No. of objects in each class:")
-  for(i in seq_along(cls)){
-    message(names(cls)[i], ": ", cls[i])
-  }
+  return(cls)
 }
