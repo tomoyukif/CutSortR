@@ -62,20 +62,43 @@ ui <- navbarPage("CutSortR",
                               
                               sidebarLayout(
                                   sidebarPanel(
-                                      shinyDirButton('in_dir',
+                                      shinyDirButton('in_dir_sort',
                                                      label='Input direcotry:',
                                                      title='Select directory',
                                                      multiple=TRUE),
                                       p("The annotation file(s) would be searched recuresively",
-                                        "in the input directory and sort images in a direcotry",
+                                        "in the input directory and sorted images will be written",
+                                        "in a direcotry",
                                         "based on the annotation file in the same direcotry."),
                                       br(),
                                       br(),
                                       actionButton("sort", "Do sort!")
                                   ),
                                   mainPanel(
-                                      textOutput("dir_choose"),
-                                      tableOutput("dir_df"),
+                                      dataTableOutput("ann_fn_sort")
+                                  )
+                              )
+                          )),
+                 tabPanel("Image Cropper",
+                          fluidPage(
+                              titlePanel("Image Cropper"),
+                              
+                              sidebarLayout(
+                                  sidebarPanel(
+                                      shinyDirButton('in_dir_crop',
+                                                     label='Input direcotry:',
+                                                     title='Select directory',
+                                                     multiple=TRUE),
+                                      p("The annotation files (.xml) would be searched recuresively",
+                                        "in the input directory and cropped images will be written ",
+                                        "in a direcotry",
+                                        "based on the annotation files."),
+                                      br(),
+                                      br(),
+                                      actionButton("crop", "Do crop!")
+                                  ),
+                                  mainPanel(
+                                      dataTableOutput("xml_fn"),
                                   )
                               )
                           ))
@@ -220,24 +243,26 @@ server <- function(input, output){
     
     
     # Function for Image Sorter
-    shinyDirChoose(input, "in_dir", roots = volumes)
+    shinyDirChoose(input, "in_dir_sort", roots = volumes)
     
-    observeEvent(input$in_dir, {
-        in_dir <- parseDirPath(volumes, input$in_dir)
-        ann_files <- list.files(in_dir, "annotation", recursive = TRUE, full.names = TRUE)
-        df <- data.frame(Directory = dirname(ann_files))
-        output$dir_choose <- renderText("Annotation files found in the following directory(s)")
-        output$dir_df <- renderTable(df)
+    observeEvent(input$in_dir_sort, {
+        in_dir_sort <- parseDirPath(volumes, input$in_dir_sort)
+        ann_files <- list.files(in_dir_sort, "annotation", recursive = TRUE, full.names = TRUE)
+        df <- data.frame(AnnotationFile = ann_files)
+        output$ann_fn_sort <- renderDataTable(df,
+                                              options = list(pageLength = 10,
+                                                             scrollCollapse = TRUE,
+                                                             searching = FALSE))
     })
     
     observeEvent(input$sort, {
-        if(!isTruthy(input$in_dir)){
+        if(!isTruthy(input$in_dir_sort)){
             showNotification("Please select input directory(s)!", duration = 10)
             
         } else {
             withProgress(message = "Sorting images...", value = 0, {
-                in_dir <- parseDirPath(volumes, input$in_dir)
-                ann_files <- list.files(in_dir, "annotation", recursive = TRUE, full.names = TRUE)
+                in_dir_sort <- parseDirPath(volumes, input$in_dir_sort)
+                ann_files <- list.files(in_dir_sort, "annotation", recursive = TRUE, full.names = TRUE)
                 n <- length(ann_files)
                 for(i_ann in ann_files){
                     i_dir <- dirname(i_ann)
@@ -246,6 +271,44 @@ server <- function(input, output){
                         coord_fn <- NULL
                     }
                     sortImages(i_ann, coord_fn, out_dir = file.path(i_dir, "sort_out"))
+                }
+                incProgress(1/n, detail = paste0("Processing the annotation file in ", i_ann))
+            })
+            showNotification("Sorted!")
+        }
+    })
+    
+    
+    
+    # Function for Image Cropper
+    shinyDirChoose(input, "in_dir_crop", roots = volumes)
+    
+    observeEvent(input$in_dir_crop, {
+        in_dir_crop <- parseDirPath(volumes, input$in_dir_crop)
+        ann_files <- list.files(in_dir_crop, ".xml$", recursive = TRUE, full.names = TRUE)
+        df <- data.frame(AnnotationFile = ann_files)
+        output$xml_fn <- renderDataTable(df,
+                                         options = list(pageLength = 10,
+                                                        scrollCollapse = TRUE,
+                                                        searching = FALSE))
+    })
+    
+    observeEvent(input$crop, {
+        if(!isTruthy(input$in_dir_crop)){
+            showNotification("Please select input directory(s)!", duration = 10)
+            
+        } else {
+            withProgress(message = "Sorting images...", value = 0, {
+                in_dir_crop <- parseDirPath(volumes, input$in_dir_crop)
+                ann_files <- list.files(in_dir_crop, "annotation", recursive = TRUE, full.names = TRUE)
+                n <- length(ann_files)
+                for(i_ann in ann_files){
+                    i_dir <- dirname(i_ann)
+                    coord_fn <- list.files(i_dir, "\\.coordinate\\.csv", full.names = TRUE)
+                    if(length(coord_fn) == 0 ){
+                        coord_fn <- NULL
+                    }
+                    cropImages(i_ann, coord_fn, out_dir = file.path(i_dir, "sort_out"))
                 }
                 incProgress(1/n, detail = paste0("Processing the annotation file in ", i_ann))
             })

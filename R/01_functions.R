@@ -50,7 +50,8 @@ sliceImages <- function(img_fn, width = 100, height = 100, step = 80, divide = 0
         y_step <- info$height / divide
         if(x_step != round(x_step)){
             x_step <- round(x_step + 1)
-        } else {
+        } 
+        if(y_step != round(y_step)){
             y_step <- round(y_step + 1)
         }
         width <- x_step
@@ -66,12 +67,12 @@ sliceImages <- function(img_fn, width = 100, height = 100, step = 80, divide = 0
                   fmt, 100, 16)
       write.table(t(c(out_fn, x, y, width, height)), coord_fn,
                   row.names = FALSE, col.names = FALSE, append = TRUE, sep = ",")
-      if(x + width < info$width){
+      if(x + x_step < info$width){
         x <- x + x_step
 
       } else {
         x <- 0
-        if(y + height < info$height){
+        if(y + y_step < info$height){
           y <- y + y_step
         } else {
           break
@@ -138,4 +139,57 @@ sortImages <- function(ann_fn, coord_fn = NULL, out_dir = ""){
   write.csv(out_df, paste(out_dir, "sortedImages.csv", sep = "/"), row.names = FALSE)
   cls <- table(out_df$label)
   return(cls)
+}
+
+
+
+
+#' Crop images as annotated
+#'
+#' @param ann_fn A path to an annotation file
+#' @param coord_fn A path to a coordinate file
+#' @param out_dir A path to an output directory
+#'
+#' @importFrom magick image_read image_info geometry_area image_crop image_write
+#' @importFrom jsonlite read_json
+#' 
+#' @export
+#'
+cropImages <- function(ann_fn, coord_fn = NULL, out_dir = ""){
+    ann <- read_json(ann_fn)
+    ann_dir <- paste(head(unlist(strsplit(ann_fn, "/")), -1), collapse = "/")
+    dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+    out_df <- NULL
+    for(i in seq_along(ann)){
+        ann_i <- ann[[i]]
+        img_fn <- ann_i$image
+        labels <- sapply(ann_i$annotations, function(x) {x$label})
+        coordinates <- lapply(ann_i$annotations, function(x) {as.data.frame(x$coordinates)})
+        coordinates <- do.call("rbind", coordinates)
+        df <- data.frame(img_fn, label = labels, coordinates)
+        
+        img <- image_read(paste(ann_dir, img_fn, sep = "/"))
+        fmt <- switch(image_info(img)$format,
+                      JPEG = "jpg", "JPG" = "jpg", "jpeg" = "jpg", jpg = "jpg",
+                      PNG = "png", png = "png", TIFF = "tif", TIF = "tif",
+                      tiff = "tiff", tif = "tif")
+        for(j in seq_len(nrow(df))){
+            image_write(image_crop(img, geometry_area(df$width[j],
+                                                      df$height[j],
+                                                      df$x[j] - df$width[j]/2,
+                                                      df$y[j] - df$height[j]/2)),
+                        paste(paste(paste(out_dir, sub("\\..*", "", img_fn), sep = "/"),
+                                    df$x[j],
+                                    df$y[j],
+                                    df$width[j],
+                                    df$height[j],
+                                    df$label[j],
+                                    sep = "_"), fmt, sep = "."),
+                        fmt, 100)
+        }
+        out_df <- rbind(out_df, df)
+    }
+    write.csv(out_df, paste(out_dir, "sortedImages.csv", sep = "/"), row.names = FALSE)
+    cls <- table(out_df$label)
+    return(cls)
 }
