@@ -3,20 +3,23 @@
 ## Installation
 You need the following packages installed.
 ```
-if( !require(shinyFiles, quietly = TRUE) ){
+if( !require(shiny, quietly = TRUE) ){
   install.packages("shiny")
 }
 if( !require(shinyFiles, quietly = TRUE) ){
   install.packages("shinyFiles")
 }
-if( !require(shinyFiles, quietly = TRUE) ){
+if( !require(shinyFeedback, quietly = TRUE) ){
   install.packages("shinyFeedback")
 }
-if( !require(shinyFiles, quietly = TRUE) ){
+if( !require(magick, quietly = TRUE) ){
   install.packages("magick")
 }
-if( !require(shinyFiles, quietly = TRUE) ){
+if( !require(jsonlite, quietly = TRUE) ){
   install.packages("jsonlite")
+}
+if( !require(jsonlite, quietly = TRUE) ){
+  install.packages("exifr")
 }
 ```
 You can install `CutSortR` from the GitHub repository.

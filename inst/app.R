@@ -79,9 +79,9 @@ ui <- navbarPage("CutSortR",
                                   )
                               )
                           )),
-                 tabPanel("Image Cropper",
+                 tabPanel("Object Cropper",
                           fluidPage(
-                              titlePanel("Image Cropper"),
+                              titlePanel("Object Cropper"),
                               
                               sidebarLayout(
                                   sidebarPanel(
@@ -95,6 +95,10 @@ ui <- navbarPage("CutSortR",
                                         "based on the annotation files."),
                                       br(),
                                       br(),
+                                      checkboxInput("single_dir",
+                                                    "Output all files in a single directory?"),
+                                      checkboxInput("poly_cut",
+                                                    "Crop objects by polygon?"),
                                       actionButton("crop", "Do crop!")
                                   ),
                                   mainPanel(
@@ -251,6 +255,7 @@ server <- function(input, output){
         df <- data.frame(AnnotationFile = ann_files)
         output$ann_fn_sort <- renderDataTable(df,
                                               options = list(pageLength = 10,
+                                                             scrollY = "500px",
                                                              scrollCollapse = TRUE,
                                                              searching = FALSE))
     })
@@ -272,7 +277,7 @@ server <- function(input, output){
                     }
                     sortImages(i_ann, coord_fn, out_dir = file.path(i_dir, "sort_out"))
                 }
-                incProgress(1/n, detail = paste0("Processing the annotation file in ", i_ann))
+                incProgress(1/n, detail = paste0("Processing ", i_ann))
             })
             showNotification("Sorted!")
         }
@@ -280,7 +285,7 @@ server <- function(input, output){
     
     
     
-    # Function for Image Cropper
+    # Function for Object Cropper
     shinyDirChoose(input, "in_dir_crop", roots = volumes)
     
     observeEvent(input$in_dir_crop, {
@@ -289,6 +294,7 @@ server <- function(input, output){
         df <- data.frame(XmlFile = xml_files)
         output$xml_fn <- renderDataTable(df,
                                          options = list(pageLength = 10,
+                                                        scrollY = "500px",
                                                         scrollCollapse = TRUE,
                                                         searching = FALSE))
     })
@@ -300,17 +306,17 @@ server <- function(input, output){
         } else {
             withProgress(message = "Cropping images...", value = 0, {
                 in_dir_crop <- parseDirPath(volumes, input$in_dir_crop)
-                ann_files <- list.files(in_dir_crop, "annotation", recursive = TRUE, full.names = TRUE)
-                n <- length(ann_files)
-                for(i_ann in ann_files){
-                    i_dir <- dirname(i_ann)
-                    coord_fn <- list.files(i_dir, "\\.coordinate\\.csv", full.names = TRUE)
-                    if(length(coord_fn) == 0 ){
-                        coord_fn <- NULL
+                xml_files <- list.files(in_dir_crop, ".xml$", recursive = TRUE, full.names = TRUE)
+                n <- length(xml_files)
+                for(i_xml in xml_files){
+                    if(isTruthy(input$single_dir)){
+                        i_dir <- file.path(dirname(i_xml), "crop_out")
+                    } else {
+                        i_dir <- paste0(sub("\\.xml", "", i_xml), "_crop_out")
                     }
-                    cropImages(i_ann, coord_fn, out_dir = file.path(i_dir, "sort_out"))
+                    cropImages(i_xml, out_dir = i_dir, input$poly_cut)
                 }
-                incProgress(1/n, detail = paste0("Processing the annotation file in ", i_ann))
+                incProgress(1/n, detail = paste0("Processing ", i_xml))
             })
             showNotification("Sorted!")
         }
