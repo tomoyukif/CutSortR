@@ -1,3 +1,9 @@
+library(shinyFeedback)
+library(shinyFiles)
+library(magick)
+library(exifr)
+library(CutSortR)
+
 ui <- navbarPage("CutSortR",
                  header = useShinyFeedback(),
                  tabPanel("Image Slicer",
@@ -279,8 +285,8 @@ server <- function(input, output){
     
     observeEvent(input$in_dir_crop, {
         in_dir_crop <- parseDirPath(volumes, input$in_dir_crop)
-        ann_files <- list.files(in_dir_crop, ".xml$", recursive = TRUE, full.names = TRUE)
-        df <- data.frame(AnnotationFile = ann_files)
+        xml_files <- list.files(in_dir_crop, ".xml$", recursive = TRUE, full.names = TRUE)
+        df <- data.frame(XmlFile = xml_files)
         output$xml_fn <- renderDataTable(df,
                                          options = list(pageLength = 10,
                                                         scrollCollapse = TRUE,
@@ -292,7 +298,7 @@ server <- function(input, output){
             showNotification("Please select input directory(s)!", duration = 10)
             
         } else {
-            withProgress(message = "Sorting images...", value = 0, {
+            withProgress(message = "Cropping images...", value = 0, {
                 in_dir_crop <- parseDirPath(volumes, input$in_dir_crop)
                 ann_files <- list.files(in_dir_crop, "annotation", recursive = TRUE, full.names = TRUE)
                 n <- length(ann_files)
