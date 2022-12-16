@@ -1,9 +1,3 @@
-library(shinyFeedback)
-library(shinyFiles)
-library(magick)
-library(exifr)
-library(CutSortR)
-
 ui <- navbarPage("CutSortR",
                  header = useShinyFeedback(),
                  tabPanel("Image Slicer",

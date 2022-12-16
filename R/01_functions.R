@@ -3,6 +3,7 @@
 #' @import shiny
 #' @import shinyFiles
 #' @import shinyFeedback
+#' @import exifr
 #'
 #' @export
 

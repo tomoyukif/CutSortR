@@ -9,6 +9,7 @@ sliceImages(
   width = 100,
   height = 100,
   step = 80,
+  divide = 0,
   fmt = "auto",
   out_dir = "",
   out = "slice"
@@ -22,6 +23,8 @@ sliceImages(
 \item{height}{An integer to specify the height of output sliced images}
 
 \item{step}{An integer to specify the sliding window step size}
+
+\item{divide}{An integer to specify how many tiles the image is cut into.}
 
 \item{fmt}{A string to specify the output file format}
 
